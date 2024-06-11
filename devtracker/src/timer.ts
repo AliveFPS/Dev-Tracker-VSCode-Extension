@@ -13,7 +13,7 @@ export class Timer {
         this.startTime = new Date();
         this.timerInterval = setInterval(() => {
           const elapsedTime = this.getElapsedTimeInSeconds();
-          process.stdout.write(`\rElapsed time: ${elapsedTime} seconds`);
+          console.log(`\rElapsed time: ${elapsedTime} seconds`);
         }, 1000);
       }
   
@@ -34,15 +34,3 @@ export class Timer {
       return Math.floor((currentTime.getTime() - this.startTime.getTime()) / 1000);
     }
   }
-
-
-
-function testTimer() {
-    console.log('Starting timer test...');
-
-    const timer = new Timer();
-    timer.start();
-
-}
-
-testTimer()
