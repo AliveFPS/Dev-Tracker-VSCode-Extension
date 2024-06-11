@@ -7,7 +7,6 @@ export function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension "devtracker" is now active!');
 	let disposable = vscode.commands.registerCommand('devtracker.helloWorld', () => {
 		vscode.window.showInformationMessage('Dev Tracker is now tracking!');
-		startTimer()
 	});
 	
 	context.subscriptions.push(disposable);
