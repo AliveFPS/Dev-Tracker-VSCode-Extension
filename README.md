@@ -10,7 +10,8 @@ A VSCode extension that tracks the time spent on a specific programming language
 
 ## Roadmap
 
-- [ ] Implement time tracking for programming languages
+- [X] Implement time tracking for programming languages
+- [ ] Create UI for Tracking for VSCode
 - [ ] Implement time tracking for Git repositories
 - [ ] Launch in VSCode Store
 
