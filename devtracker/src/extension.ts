@@ -2,40 +2,46 @@ import * as vscode from 'vscode';
 import { Timer } from './timer';
 import { supportedLanguages } from './languages';
 
-let timer: Timer | null = null
-let currentLanguage: string | undefined
-let global_context: vscode.ExtensionContext 
+interface LanguageData {
+    [key: string]: number;
+}
+
+let timer: Timer | null = null;
+let currentLanguage: string | undefined;
+let globalState: vscode.Memento;
 
 export function activate(context: vscode.ExtensionContext) {
-	console.log('Congratulations, your extension "devtracker" is now active!');
-	let disposable = vscode.commands.registerCommand('devtracker.helloWorld', () => {
-		vscode.window.showInformationMessage('Dev Tracker is now tracking!');
-	});
-	
-    //saves context for future use
-    global_context = context;
+    console.log('Congratulations, your extension "devtracker" is now active!');
+    globalState = context.globalState;
 
-	context.subscriptions.push(disposable);
+    let startTrackingDisposable = vscode.commands.registerCommand('devtracker.startTracking', () => {
+        vscode.window.showInformationMessage('Dev Tracker is now tracking!');
+    });
 
-	vscode.workspace.onDidOpenTextDocument((document) => {
+    let viewDataDisposable = vscode.commands.registerCommand('devtracker.viewData', () => {
+        displayLanguageData();
+    });
+
+    context.subscriptions.push(startTrackingDisposable, viewDataDisposable);
+
+    vscode.workspace.onDidOpenTextDocument((document) => {
         if (supportedLanguages.includes(document.languageId)) {
-            startTimer(document.languageId)
+            startTimer(document.languageId);
         }
     });
 
-    vscode.window.onDidChangeActiveTextEditor((editor) =>{
-        if (editor && supportedLanguages.includes(editor.document.languageId)){
-            startTimer(editor.document.languageId)
-        } else if (editor && editor.document.languageId != 'plaintext'){
-            stopTimer()
+    vscode.window.onDidChangeActiveTextEditor((editor) => {
+        if (editor && supportedLanguages.includes(editor.document.languageId)) {
+            startTimer(editor.document.languageId);
+        } else {
+            stopTimer();
         }
-    })
+    });
 }
 
 export function deactivate() {
-	stopTimer();
+    stopTimer();
 }
-
 
 function startTimer(languageId: string) {
     if (languageId !== currentLanguage) {
@@ -45,23 +51,44 @@ function startTimer(languageId: string) {
         timer = new Timer();
         timer.start();
 
-        // Prints the time spent on project during the begining of the project
-        let time_worked = global_context.globalState.get("Current_Time", 0);
-        console.log(`Timer has started, the current time worked is ${time_worked} seconds`);
+        let languageData = globalState.get<LanguageData>('languageData', {});
+        let timeWorked = languageData[languageId] || 0;
+        console.log(`Timer has started, the current time worked on ${languageId} is ${timeWorked} seconds`);
     }
 }
 
 function stopTimer() {
-    if (timer) {
-        // Gets the current time before the time is stopped
-        let current_time = timer.getElapsedTimeInSeconds()
-
+    if (timer && currentLanguage) {
+        let elapsedTime = timer.getElapsedTimeInSeconds();
         timer.stop();
         timer = null;
 
-        // Adds the previous time to the current time
-        let time_added = global_context.globalState.get("Current_Time", 0) + current_time;
-        global_context.globalState.update("Current_Time", time_added);
-        console.log(`Timer is stopped, the current time worked is ${time_added} seconds`);
+        // Update the time for the current language
+        let languageData = globalState.get<LanguageData>('languageData', {});
+        languageData[currentLanguage] = (languageData[currentLanguage] || 0) + elapsedTime;
+        globalState.update('languageData', languageData);
+
+        console.log(`Timer stopped, total time worked on ${currentLanguage} is ${languageData[currentLanguage]} seconds`);
     }
+}
+
+function displayLanguageData() {
+    let languageData = globalState.get<LanguageData>('languageData', {});
+    let dataDisplay = Object.entries(languageData)
+        .map(([lang, time]) => `${lang}: ${formatTime(time)}`)
+        .join('\n');
+
+    if (dataDisplay) {
+        vscode.window.showInformationMessage('Language Data:', { modal: true, detail: dataDisplay });
+    } else {
+        vscode.window.showInformationMessage('No language data recorded yet.');
+    }
+}
+
+function formatTime(seconds: number): string {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+
+    return `${hours}h ${minutes}m ${remainingSeconds}s`;
 }
