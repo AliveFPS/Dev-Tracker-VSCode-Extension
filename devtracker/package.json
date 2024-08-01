@@ -14,8 +14,12 @@
   "contributes": {
     "commands": [
       {
-        "command": "devtracker.helloWorld",
-        "title": "Hello World"
+        "command": "devtracker.startTracking",
+        "title": "Start Dev Tracker"
+      },
+      {
+        "command": "devtracker.viewData",
+        "title": "View Dev Tracker Data"
       }
     ]
   },
